@@ -52,7 +52,14 @@
 	  margin: 7px;
 	  width: 5em;  
 	  }
-	  
+	  .img {
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100px;
+    height:100px;
+    background:red;
+}
 	  
 	  
       .center { text-align: center; }
@@ -70,7 +77,14 @@
 			 box-shadow: 0px 0px 40px 1px #999;
 			 opacity:0;
 		 } 
-	 
+	 .legend1 {
+		position: absolute;
+			font-size: 18px;
+			left: 30%;
+			height:200px;
+			bottom: 5%;
+			width: 30%;
+	 }
   
 	  div.tooltip {
 		  z-index: 10000;
@@ -83,6 +97,8 @@
 		  opacity: 0.9; 
 		  position: absolute;
 		   font-family: 'Raleway', sans-serif;}  
+	
+	  
 	
 		   
 		   
@@ -151,6 +167,17 @@ function drawForest(geo_data) {
 				tbody = table.append("tbody");
 				thead.append("th")
 	 // append the header row
+			var legend1 = d3.select('body').append('legend1')
+			.attr("style", "margin-left: 600px")
+
+		legend1.append('svg:image')
+		.attr({
+		'xlink:href': 'http://www.iconpng.com/png/beautiful_flat_color/computer.png',  // can also add svg file here
+		x: 0,
+		y: 0,
+		width: 128,
+		height: 128
+		});
 
 
       function plot(data) {
@@ -166,8 +193,9 @@ function drawForest(geo_data) {
 				var PercentChange_max = d3.min(data, function(d) {
                 return -d.PercentChange;});
 			  ////color scale for shading based on logarithmic scale
-			 var color = d3.scale.log().domain([1,PercentChange_max]).range(['#009d6e', '#a5d5d8']);
-					
+			  var scaling = d3.scale.linear().domain([-20,20]).range(-1000,1000)
+			 var color = d3.scale.linear().domain([-1000,1000]).range(['red', 'green']);
+					var col = '#008000'
 		  function update(year) {
 					
 			  d3.select("h2").text("Forest Cover Growth by Country "+year);
@@ -202,8 +230,34 @@ function drawForest(geo_data) {
 							 else {return 0}})
 							 .style("fill", function(d){
 							 if(countryset.values().indexOf(d.properties.iso) !== -1) {
-							 return color(ProductionByID.get(d.properties.iso));}
-							 else {return color(0)}})
+							 //var scaled_values = scaling(ProductionByID.get(d.properties.iso));
+							 //return color(scaling(ProductionByID.get(d.properties.iso)));
+							if(ProductionByID.get(d.properties.iso) < -10 ){
+								return '#800000'
+							 }
+							 if(ProductionByID.get(d.properties.iso) >= -10 & ProductionByID.get(d.properties.iso) <= -2){
+								return '#8B0000'
+							 }
+							 if(ProductionByID.get(d.properties.iso) >= -2 & ProductionByID.get(d.properties.iso) < 0){
+								return '#FF0000'
+							 }
+							 if(ProductionByID.get(d.properties.iso) > 0 & ProductionByID.get(d.properties.iso) <= 0.5){
+								return '#FFFF00'
+							 }
+							 if(ProductionByID.get(d.properties.iso) > 0.5 & ProductionByID.get(d.properties.iso) <= 0.75){
+								return '#9ACD32'
+							 }
+							 if(ProductionByID.get(d.properties.iso) > 0.75 & ProductionByID.get(d.properties.iso) <= 1){
+								return '#7CFC00'
+							 }
+							 if(ProductionByID.get(d.properties.iso) > 1 & ProductionByID.get(d.properties.iso) <= 2){
+								return '#008000'
+							 }
+							 if(ProductionByID.get(d.properties.iso) > 2){
+								return '#006400'
+							 }
+							}
+							else {return '#808080'}})
 						 .on("mousemove", function(d,i) {
 								  var mouse = d3.mouse(svg.node()).map( function(d) 
 								  { return parseFloat(d); } );
@@ -260,7 +314,7 @@ function drawForest(geo_data) {
 			}
 
 		// render the table
-			var peopleTable = tabulate(filteredsorted.slice(0,5), columnlist);
+			var forestTable = tabulate(filteredsorted.slice(0,5), columnlist);
 			}
 			
 		    update("1990");		
@@ -303,7 +357,7 @@ function drawForest(geo_data) {
     { "year": 2017, "note": "<p class=\"center\"><b>2017</b></p><br>"+clickthisbox},
     { "year": 2018, "note": "<p class=\"center\"><b>2018</b></p><br>"+clickthisbox},
     { "year": 2019, "note": "<p class=\"center\"><b>2019</b></p><br>"+clickthisbox},	
-	{ "year": 2014, "note": "<br>Now feel free to explore the data on your own, using the slider at the top of the page.<br><p class = \"clickbox\"> <b> Click here to finish.<br></b></p>"}
+	{ "year": 2019, "note": "<br>Now feel free to explore the data on your own, using the slider at the top of the page.<br><p class = \"clickbox\"> <b> Click here to finish.<br></b></p>"}
 
 	];
 		//set color of country text in table and country border
@@ -330,69 +384,10 @@ function drawForest(geo_data) {
 		.remove();}}
 		
 		guided_tour(0);
-			
-			
-			
-			
-			///set up slider above map, and parameters for slider, which will run update function
-			d3.select('#slider3').call(d3.slider()
-				.axis(true).min(1990).max(2019).step(1)
-				.on("slide", function( evt,value) { 
-							update(value);}));
- 			                var w = 140, h = 400;
 
-			//set up legend on upper left
-			var key = d3.select("body")
-			.append("svg")
-			.attr("id", "key")
-			.attr("width", w)
-			.attr("height", h)
-			.attr("style", "position:absolute; top:20px; right:20px");
+}
 
-			var legend = key.append("defs")
-				.append("svg:linearGradient")
-				.attr("id", "gradient")
-				.attr("x1", "100%")
-				.attr("y1", "0%")
-				.attr("x2", "100%")
-				.attr("y2", "100%")
-				.attr("spreadMethod", "pad");
-				legend
-				.append("stop")
-				.attr("offset", "0%")
-				.attr("stop-color", "#009d6e")
-				.attr("stop-opacity", 1);
-				legend.
-				append("stop")
-				.attr("offset", "100%")
-				.attr("stop-color", "green")
-				.attr("stop-opacity", 1);
-
-				key.append("rect")
-				.attr("width", w - w)
-				.attr("height", h - h)
-				.style("fill", "url(#gradient)")
-				.attr("transform", "translate(0,10)");
-
-			var y = d3.scale.log().range([0,300]).domain([-10,10]);
-
-			var yAxis = d3.svg.axis();
-				yAxis.scale(y).orient("right").tickFormat
-      					(function (d) {return y.tickFormat(4,d3.format(",d"))(d)});
-						key.append("g")
-						.attr("class", "yaxis")
-						.attr("transform", "translate(0,1000)")
-						.call(yAxis)
-						.append("text")
-						.attr("transform", "rotate(-90)")
-						.attr("y", 30)
-						.attr("dy", "2.75em")
-						.style("text-anchor", "end")
-						.text("% Forest Cover Growth");
-					//end legend
-					}
-
-		  d3.csv("dataFAO.csv",function(d)
+		  d3.csv("/Users/sanketgokhale/Downloads/dataFAO.csv",function(d)
 		  {return d},plot);
 }
 
@@ -507,8 +502,43 @@ function drawGDP(geo_data){
 							 else {return 0}})
 							 .style("fill", function(d){
 							 if(countryset.values().indexOf(d.properties.iso) !== -1) {
-							 return color(GDP_GrowthByID.get(d.properties.iso));}
-							 else {return color(0)}})
+							 //var scaled_values = scaling(ProductionByID.get(d.properties.iso));
+							 //return color(scaling(ProductionByID.get(d.properties.iso)));
+							if(GDP_GrowthByID.get(d.properties.iso) < -10 ){
+								return '#800000'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) >= -10 & GDP_GrowthByID.get(d.properties.iso) <= -2){
+								return '#8B0000'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) >= -2 & GDP_GrowthByID.get(d.properties.iso) < 0){
+								return '#FF0000'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) > 0 & GDP_GrowthByID.get(d.properties.iso) <= 1){
+								return '#FFFF00'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) > 1 & GDP_GrowthByID.get(d.properties.iso) <= 2){
+								return '#9ACD32'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) > 2 & GDP_GrowthByID.get(d.properties.iso) <= 3){
+								return '#7CFC00'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) > 3 & GDP_GrowthByID.get(d.properties.iso) <= 5){
+								return '#008000'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) > 5 & GDP_GrowthByID.get(d.properties.iso) <= 7){
+								return '#006400'
+							 }
+							 if(GDP_GrowthByID.get(d.properties.iso) > 7 & GDP_GrowthByID.get(d.properties.iso) <= 9){
+								return '#006400'
+							}
+							if(GDP_GrowthByID.get(d.properties.iso) > 9 & GDP_GrowthByID.get(d.properties.iso) <= 12){
+								return '#87CEFA'
+							}
+							if(GDP_GrowthByID.get(d.properties.iso) > 12){
+								return '#000080'
+							}
+						}
+							else {return '#808080'}})
 						 .on("mousemove", function(d,i) {
 								  var mouse = d3.mouse(svg.node()).map( function(d) 
 								  { return parseFloat(d); } );
@@ -566,7 +596,7 @@ function drawGDP(geo_data){
 			}
 
 		// render the table
-			var peopleTable = tabulate(filteredsorted.slice(0,5), columnlist);
+			var gdpTable = tabulate(filteredsorted.slice(0,5), columnlist);
 			}
 		
 			
@@ -713,8 +743,8 @@ function drawGDP(geo_data){
 		  d3.csv("WorldBank_data.csv",function(d)
 		  {return d},plot);
 }
+
 </script>
-    
 </body>
 </html>
 <script type="text/javascript">
@@ -757,8 +787,9 @@ d3.select("#forest").on("click", function(){
     }
     );
 
-</script>
 
-  
+</script>
+<IMG STYLE="position:absolute; TOP:135px; RIGHT:170px; WIDTH:100px; HEIGHT:350px" SRC="/Users/sanketgokhale/Desktop/SS/delete_manager_managerid_team_teamid_before.png">
+	<IMG STYLE="position:absolute; TOP:135px; RIGHT:50px; WIDTH:100px; HEIGHT:350px" SRC="/Users/sanketgokhale/Desktop/SS/delete_manager_managerid_team_teamid_before.png">	
 </body>
 </html>
