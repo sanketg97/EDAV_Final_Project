@@ -8,8 +8,8 @@
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.3/moment.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
-  <script src="/Users/sanketgokhale/Desktop/EDAV_Final_Project/d3.slider.js"></script>
-  <link rel="stylesheet" href="/Users/sanketgokhale/Desktop/EDAV_Final_Project/d3.slider.css" />
+  <script src="d3.slider.js"></script>
+  <link rel="stylesheet" href="d3.slider.css" />
 
 
   <style>
@@ -393,7 +393,7 @@ function drawForest(geo_data) {
 					//end legend
 					}
 
-		  d3.csv("/Users/sanketgokhale/Desktop/EDAV_Final_Project/dataFAO.csv",function(d)
+		  d3.csv("dataFAO.csv",function(d)
 		  {return d},plot_points);
 }
 
@@ -722,7 +722,7 @@ function drawGDP(geo_data){
 					//end legend
 					}
 
-		  d3.csv("/Users/sanketgokhale/Desktop/EDAV_Final_Project/WorldBank_data.csv",function(d)
+		  d3.csv("WorldBank_data.csv",function(d)
 		  {return d},plot_points);
 }
 </script>
@@ -764,12 +764,12 @@ d3.select("#chart").append("h3").text("Select a criteria to compare the regions 
 d3.select("#migrationradio").on("click", function(){
     d3.selectAll('svg').remove();
     d3.selectAll('th').remove();
-    d3.json("/Users/sanketgokhale/Desktop/EDAV_Final_Project/world-110m-cia.json", drawForest);
+    d3.json("world-110m-cia.json", drawForest);
 });
 
     d3.select("#killingsradio").on("click", function(){
     d3.selectAll('svg').remove();
-    d3.json("/Users/sanketgokhale/Desktop/EDAV_Final_Project/world-110m-cia.json", drawGDP);
+    d3.json("world-110m-cia.json", drawGDP);
     }
     );
 
