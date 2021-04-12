@@ -370,8 +370,8 @@ function drawForest(geo_data) {
 				.attr("stop-opacity", 1);
 
 				key.append("rect")
-				.attr("width", w - 100)
-				.attr("height", h - 100)
+				.attr("width", w - w)
+				.attr("height", h - h)
 				.style("fill", "url(#gradient)")
 				.attr("transform", "translate(0,10)");
 
@@ -688,8 +688,8 @@ function drawGDP(geo_data){
 				.attr("stop-opacity", 1);
 
 				key.append("rect")
-				.attr("width", w - 100)
-				.attr("height", h - 100)
+				.attr("width", w - w)
+				.attr("height", h - w)
 				.style("fill", "url(#gradient)")
 				.attr("transform", "translate(0,10)");
 
