@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://d3js.org/topojson.v1.min.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.3/moment.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <script src="/Users/sanketgokhale/Desktop/EDAV_Final_Project/d3.slider.js"></script>
+  <link rel="stylesheet" href="/Users/sanketgokhale/Desktop/EDAV_Final_Project/d3.slider.css" />
+
+
+  <style>
+	
+	p {
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: 0;
+    margin-right: 0;
+}
+ 
+	h2 {
+        text-align: center;
+        color: black;
+		font-family: 'Raleway', sans-serif;
+		margin-top:2cm;
+      }
+	
+	.clickbox {
+    position: absolute;
+
+	    bottom: 10px;
+ 
+
+	text-align: center;
+		}
+ 
+
+	
+   .hidden { 
+     display: none; 
+      }
+
+     
+	.country {fill:#ccc;}	
+      
+	 g.yaxis{ font-family: 'Raleway', sans-serif;}
+	  
+	 #slider3 {
+	  margin: 7px;
+	  width: 5em;  
+	  }
+	  
+	  
+	  
+      .center { text-align: center; }
+
+	  
+	  .tourtextbox {
+			position: absolute;
+			font-size: 18px;
+			left: 70%;
+			height:200px;
+			background-color:#ffe6cc;
+			bottom: 5%;
+			width: 30%;
+			font-family: 'Raleway', sans-serif;
+			 box-shadow: 0px 0px 40px 1px #999;
+			 opacity:0;
+		 } 
+	 
+  
+	  div.tooltip {
+		  z-index: 10000;
+		  color: #222; 
+		  background: #fff; 
+		  padding: .5em; 
+		  text-shadow: #f5f5f5 0 1px 0;
+		  border-radius: 2px; 
+		  box-shadow: 0px 0px 2px 0px #a6a6a6; 
+		  opacity: 0.9; 
+		  position: absolute;
+		   font-family: 'Raleway', sans-serif;}  
+	
+		   
+		   
+    </style>
+<script type="text/javascript">
+
+
+
+function drawForest(geo_data) {
+        "use strict";
+		
+		
+	
+		
+		
+        var margin = 70,
+            width = 1200 - margin,
+            height = 500 - margin;
+		
+
+		var tooltip = d3.select("body").append("div").attr("class", "tooltip hidden");
+
+
+		var offsetL = 30;
+		var offsetT =30;
+		
+		//create title
+      
+	
+		var projection = d3.geo.mercator().translate([0, 0]).scale(width / 3 / Math.PI);
+		var path = d3.geo.path().projection(projection);
+
+		//create svg and append structures for map creation & fill
+		
+		var svg = d3.select("body").append("svg").attr("width", width + margin)
+            .attr("height", height + margin).attr("margin-top","5cm");
+
+        var outterg = svg.append("g")
+		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        var g = outterg.append("g").attr("id", "innerg");
+		var  columnlist=["Country", "Production"];
+
+        g.append("path").attr("d", path);
+  	    var topo = topojson.feature(geo_data, geo_data.objects.countries).features
+		var country = d3.select("#innerg").selectAll(".country").data(topo);
+		
+		    country.enter().insert("path").attr("class", "country")
+					  .attr("d", path)
+					  .attr("id", function(d,i) { return d.id; })
+					  
+					  .attr("title", function(d,i) { return d.properties.name; })
+					  .style("fill", "black")
+					  .style("stroke", "#111")
+					  .attr("class", "country")
+					  .attr("d", path)
+					  .attr("id", function(d,i) { return d.id; })
+					  
+					  .attr("title", function(d,i) { return d.properties.name; }) ;
+	//append table 
+		var table = d3.select("body").append("table")
+            .attr("style", "margin-left: 100px")
+			.attr("class","table")
+			.attr("style", "position:absolute; bottom:10px;left:10px"),
+				thead = table.append("thead"),
+				tbody = table.append("tbody");
+				thead.append("th")
+	 // append the header row
+
+
+      function plot_points(data) {
+		
+		
+
+
+
+		///take maximum production value from file
+			 var production_max = d3.max(data, function(d) {
+                return +d.Production;});
+			
+				var production_min = d3.min(data, function(d) {
+                return -d.Production;});
+			  ////color scale for shading based on logarithmic scale
+			 var color = d3.scale.log().domain([1,production_max]).range(['#009d6e', '#a5d5d8']);
+					
+		  function update(year) {
+					
+			  d3.select("h2").text("Forest Cover Growth by Country "+year);
+
+
+			  //filter data for specified year
+			 var filtered=data.filter(function(d) {if ( d['Year'] == year){return d;}})
+			 var filteredsorted = filtered.sort(function(a,b) { 
+                  return d3.descending(+a.Production,+b.Production);});  
+				  
+			
+			 var ProductionByID=d3.map();
+			  
+			  //select ISO and ID data from filtered data
+				 filtered.forEach(function(f) {
+					ProductionByID.set(f['ID'],f['Production']);
+					});
+			  
+			  
+			 var countryset = d3.set();
+			 filtered.forEach(function(d) {
+                  countryset.add(d['ID']);});
+			
+				country
+			
+			  //update country fill to map, and update tooltip to allow for display of Production
+			  //upon mouse rollover
+			
+			      country.attr("production", function(d){
+							 if(countryset.values().indexOf(d.properties.iso) !== -1) {
+							 return ProductionByID.get(d.properties.iso);}
+							 else {return 0}})
+							 .style("fill", function(d){
+							 if(countryset.values().indexOf(d.properties.iso) !== -1) {
+							 return color(ProductionByID.get(d.properties.iso));}
+							 else {return color(0)}})
+						 .on("mousemove", function(d,i) {
+								  var mouse = d3.mouse(svg.node()).map( function(d) 
+								  { return parseFloat(d); } );
+								  var pop = ' | Forest Cover Growth (YoY): '
+								  +parseFloat(ProductionByID.get(d.properties.iso))
+								  +'  %';
+
+								  tooltip.classed("hidden", false)
+						 .attr("style", "left:"+(mouse[0]+offsetL)+"px;top:"
+						 +(mouse[1]+offsetT)+"px")
+						 .html(d.properties.name+pop);})
+						 .on("mouseout",  function(d,i) {
+						    tooltip.classed("hidden", true);});
+						  
+			 // Add rows to table containing production data
+			function tabulate(data, columns) {
+							d3.selectAll("tr").remove();
+
+    
+					 thead.select("th")
+						.text("Countries with most growth in Forest Cover "+year)
+						.attr("class","columnsclass")
+						.attr("colspan",2)
+					 thead.append("tr")
+						  .selectAll("th")
+						  .data(columnlist)
+						  .enter()
+						  .append("th").attr("width",130)
+						  .text(function(column) { return column; });
+
+ 
+
+    // create a row for each object in the data
+     				var rows = tbody.selectAll("tr")
+						.data(data)
+						.enter()
+						.append("tr")
+						.attr("class","dataitems");
+
+    // create a cell in each row for each column
+				    var cells = rows.selectAll("td")
+						.data(function(row) {
+							return columns.map(function(column) {
+								return {column: column, value: row[column]};
+							});
+						})
+						.enter()
+						.append("td")
+						.attr("style", "font-family: Raleway") // sets the font style
+							.html(function(d) { return d.value; })
+							.attr("class",function(d) { return d.value; });
+    
+		return table;
+			}
+
+		// render the table
+			var peopleTable = tabulate(filteredsorted.slice(0,5), columnlist);
+			}
+			
+		    update("1990");		
+		d3.select("body").append("div").attr("class","tourtextbox")
+		.attr("padding-bottom","25px");
+		
+	    ////function to give explanatory tour of data
+	    function guided_tour(notes_index) {
+		var clickthisbox= "<p class = \"clickbox\"><b><br>Click this box to continue.</br></p>"
+		
+		var year_ref = [{"year":0,"note":"This animated map will allow you explore changes in global coffee production from 1990 to 2014."+clickthisbox },
+		{"year":0,"note":"From this tour, you will see that while many top producers have relatively consistent production across time, the global leader throughout the period (Brazil), disproportionately increased its output.  And a new major global player (Vietnam) leapfrogged other producers to take the #2 spot."+clickthisbox },
+		{ "year": 1990, "note": "<p class=\"center\"><b>1990</b></p>"+clickthisbox },
+	{ "year": 1991, "note": "<p class=\"center\"><b>1991</b></p>"+clickthisbox },
+	{ "year": 1992, "note": "<p class=\"center\"><b>1992</b></p><br>"+clickthisbox},
+	{ "year": 1993, "note": "<p class=\"center\"><b>1993</b></p><br>"+clickthisbox},
+	{ "year": 1994, "note": "<p class=\"center\"><b>1994</b></p><br>"+clickthisbox},
+    { "year": 1995, "note": "<p class=\"center\"><b>1995</b></p><br>"+clickthisbox},
+	{ "year": 1996, "note": "<p class=\"center\"><b>1996</b></p><br>"+clickthisbox},
+    { "year": 1997, "note": "<p class=\"center\"><b>1997</b></p><br>"+clickthisbox},
+    { "year": 1998, "note": "<p class=\"center\"><b>1998</b></p><br>"+clickthisbox},
+    { "year": 1999, "note": "<p class=\"center\"><b>1999</b></p><br>"+clickthisbox},
+    { "year": 2000, "note": "<p class=\"center\"><b>2000</b></p><br>"+clickthisbox},
+    { "year": 2001, "note": "<p class=\"center\"><b>2001</b></p><br>"+clickthisbox},
+    { "year": 2002, "note": "<p class=\"center\"><b>2002</b></p><br>"+clickthisbox},
+    { "year": 2003, "note": "<p class=\"center\"><b>2003</b></p><br>"+clickthisbox},
+    { "year": 2004, "note": "<p class=\"center\"><b>2004</b></p><br>"+clickthisbox},
+    { "year": 2005, "note": "<p class=\"center\"><b>2005</b></p><br>"+clickthisbox},
+    { "year": 2006, "note": "<p class=\"center\"><b>2006</b></p><br>"+clickthisbox},
+    { "year": 2007, "note": "<p class=\"center\"><b>2007</b></p><br>"+clickthisbox},
+    { "year": 2008, "note": "<p class=\"center\"><b>2008</b></p><br>"+clickthisbox},
+    { "year": 2009, "note": "<p class=\"center\"><b>2009</b></p><br>"+clickthisbox},
+    { "year": 2010, "note": "<p class=\"center\"><b>2010</b></p><br>"+clickthisbox},
+	{ "year": 2011, "note": "<p class=\"center\"><b>2011</b></p><br>"+clickthisbox},
+	{ "year": 2012, "note": "<p class=\"center\"><b>2012</b></p><br>"+clickthisbox},
+	{ "year": 2013, "note": "<p class=\"center\"><b>2013</b></p><br>"+clickthisbox},
+	{ "year": 2014, "note": "<p class=\"center\"><b>2014</b></p><br>"+clickthisbox},
+    { "year": 2015, "note": "<p class=\"center\"><b>2015</b></p><br>"+clickthisbox},
+    { "year": 2016, "note": "<p class=\"center\"><b>2016</b></p><br>"+clickthisbox},
+    { "year": 2017, "note": "<p class=\"center\"><b>2017</b></p><br>"+clickthisbox},
+    { "year": 2018, "note": "<p class=\"center\"><b>2018</b></p><br>"+clickthisbox},
+    { "year": 2019, "note": "<p class=\"center\"><b>2019</b></p><br>"+clickthisbox},	
+	{ "year": 2014, "note": "<br>Now feel free to explore the data on your own, using the slider at the top of the page.<br><p class = \"clickbox\"> <b> Click here to finish.<br></b></p>"}
+
+	];
+		//set color of country text in table and country border
+		if (notes_index<year_ref.length) {
+				update(year_ref[notes_index].year);
+			d3.selectAll(".tourtextbox")
+				/*.style("top", "0px")*/
+			  .transition()
+				.duration(600)
+				.style("top", "600px")
+				.style("color", "#000000")
+				.style("opacity",0.8);	
+				
+
+				d3.selectAll(".tourtextbox").html(year_ref[notes_index].note)
+				.on("click",function(){notes_index+=1;guided_tour(notes_index);} )}
+				
+		if (notes_index > year_ref.length-1) {
+		update(1990);
+		d3.selectAll(".tourtextbox")
+		.transition().duration(600).style("top", "0px")
+		
+		.style("opacity",0)
+		.remove();}}
+		
+		guided_tour(0);
+			
+			
+			
+			
+			///set up slider above map, and parameters for slider, which will run update function
+			d3.select('#slider3').call(d3.slider()
+				.axis(true).min(1990).max(2019).step(1)
+				.on("slide", function( evt,value) { 
+							update(value);}));
+ 			                var w = 140, h = 400;
+
+			//set up legend on upper left
+			var key = d3.select("body")
+			.append("svg")
+			.attr("id", "key")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("style", "position:absolute; top:20px; right:20px");
+
+			var legend = key.append("defs")
+				.append("svg:linearGradient")
+				.attr("id", "gradient")
+				.attr("x1", "100%")
+				.attr("y1", "0%")
+				.attr("x2", "100%")
+				.attr("y2", "100%")
+				.attr("spreadMethod", "pad");
+				legend
+				.append("stop")
+				.attr("offset", "0%")
+				.attr("stop-color", "#009d6e")
+				.attr("stop-opacity", 1);
+				legend.
+				append("stop")
+				.attr("offset", "100%")
+				.attr("stop-color", "green")
+				.attr("stop-opacity", 1);
+
+				key.append("rect")
+				.attr("width", w - 100)
+				.attr("height", h - 100)
+				.style("fill", "url(#gradient)")
+				.attr("transform", "translate(0,10)");
+
+			var y = d3.scale.log().range([0,300]).domain([-10,10]);
+
+			var yAxis = d3.svg.axis();
+				yAxis.scale(y).orient("right").tickFormat
+      					(function (d) {return y.tickFormat(4,d3.format(",d"))(d)});
+						key.append("g")
+						.attr("class", "yaxis")
+						.attr("transform", "translate(41,10)")
+						.call(yAxis)
+						.append("text")
+						.attr("transform", "rotate(-90)")
+						.attr("y", 30)
+						.attr("dy", "2.75em")
+						.style("text-anchor", "end")
+						.text("thousand 60kg bags");
+					//end legend
+					}
+
+		  d3.csv("/Users/sanketgokhale/Desktop/EDAV_Final_Project/dataFAO.csv",function(d)
+		  {return d},plot_points);
+}
+
+function drawGDP(geo_data){
+        "use strict";
+		
+		
+	
+		
+		
+        var margin = 70,
+            width = 1200 - margin,
+            height = 500 - margin;
+		
+
+		var tooltip = d3.select("body").append("div").attr("class", "tooltip hidden");
+
+
+		var offsetL = 30;
+		var offsetT =30;
+		
+		//create title
+      
+	
+		var projection = d3.geo.mercator().translate([0, 0]).scale(width / 3 / Math.PI);
+		var path = d3.geo.path().projection(projection);
+
+		//create svg and append structures for map creation & fill
+		
+		var svg = d3.select("body").append("svg").attr("width", width + margin)
+            .attr("height", height + margin).attr("margin-top","5cm");
+
+        var outterg = svg.append("g")
+		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        var g = outterg.append("g").attr("id", "innerg");
+		var  columnlist=["Country", "Production"];
+
+        g.append("path").attr("d", path);
+  	    var topo = topojson.feature(geo_data, geo_data.objects.countries).features
+		var country = d3.select("#innerg").selectAll(".country").data(topo);
+		
+		    country.enter().insert("path").attr("class", "country")
+					  .attr("d", path)
+					  .attr("id", function(d,i) { return d.id; })
+					  
+					  .attr("title", function(d,i) { return d.properties.name; })
+					  .style("fill", "white")
+					  .style("stroke", "#111")
+					  .attr("class", "country")
+					  .attr("d", path)
+					  .attr("id", function(d,i) { return d.id; })
+					  
+					  .attr("title", function(d,i) { return d.properties.name; }) ;
+	//append table that will show top 10 coffee producers per year
+		var table = d3.select("body").append("table")
+            .attr("style", "margin-left: 100px")
+			.attr("class","table")
+			.attr("style", "position:absolute; bottom:10px;left:10px"),
+				thead = table.append("thead"),
+				tbody = table.append("tbody");
+				thead.append("th")
+	 // append the header row
+
+
+      function plot_points(data) {
+		
+		
+
+
+
+		///take maximum production value from file
+			 var production_max = d3.max(data, function(d) {
+                return +d.Production;});
+			
+				var production_min = d3.min(data, function(d) {
+                return -d.Production;});
+			  ////color scale for shading based on logarithmic scale
+			 var color = d3.scale.log().domain([1,production_max]).range(['#009d6e', '#a5d5d8']);
+					
+		  function update(year) {
+					
+			  d3.select("h2").text("Total Coffee Production by Country "+year);
+
+
+			  //filter data for specified year
+			 var filtered=data.filter(function(d) {if ( d['Year'] == year){return d;}})
+			 var filteredsorted = filtered.sort(function(a,b) { 
+                  return d3.descending(+a.Production,+b.Production);});  
+				  
+			
+			 var ProductionByID=d3.map();
+			  
+			  //select ISO and ID data from filtered data
+				 filtered.forEach(function(f) {
+					ProductionByID.set(f['ID'],f['Production']);
+					});
+			  
+			  
+			 var countryset = d3.set();
+			 filtered.forEach(function(d) {
+                  countryset.add(d['ID']);});
+			
+				country
+			
+			  //update country fill to map, and update tooltip to allow for display of Production
+			  //upon mouse rollover
+			
+			      country.attr("production", function(d){
+							 if(countryset.values().indexOf(d.properties.iso) !== -1) {
+							 return ProductionByID.get(d.properties.iso);}
+							 else {return 0}})
+							 .style("fill", function(d){
+							 if(countryset.values().indexOf(d.properties.iso) !== -1) {
+							 return color(ProductionByID.get(d.properties.iso));}
+							 else {return color(0)}})
+						 .on("mousemove", function(d,i) {
+								  var mouse = d3.mouse(svg.node()).map( function(d) 
+								  { return parseFloat(d); } );
+								  var pop = ' | Production: '
+								  +parseFloat(ProductionByID.get(d.properties.iso))
+								  +'  %';
+
+								  tooltip.classed("hidden", false)
+						 .attr("style", "left:"+(mouse[0]+offsetL)+"px;top:"
+						 +(mouse[1]+offsetT)+"px")
+						 .html(d.properties.name+pop);})
+						 .on("mouseout",  function(d,i) {
+						    tooltip.classed("hidden", true);});
+						  
+			 // Add rows to table containing production data
+			function tabulate(data, columns) {
+							d3.selectAll("tr").remove();
+                            d3.selectAll("th").remove();
+
+    
+					 thead.select("th")
+						.text("Top 10 Producers for "+year)
+						.attr("class","columnsclass")
+						.attr("colspan",2)
+					 thead.append("tr")
+						  .selectAll("th")
+						  .data(columnlist)
+						  .enter()
+						  .append("th").attr("width",130)
+						  .text(function(column) { return column; });
+
+ 
+
+    // create a row for each object in the data
+     				var rows = tbody.selectAll("tr")
+						.data(data)
+						.enter()
+						.append("tr")
+						.attr("class","dataitems");
+
+    // create a cell in each row for each column
+				    var cells = rows.selectAll("td")
+						.data(function(row) {
+							return columns.map(function(column) {
+								return {column: column, value: row[column]};
+							});
+						})
+						.enter()
+						.append("td")
+						.attr("style", "font-family: Raleway") // sets the font style
+							.html(function(d) { return d.value; })
+							.attr("class",function(d) { return d.value; });
+    
+		return table;
+			}
+
+		// render the table
+			var peopleTable = tabulate(filteredsorted.slice(0,5), columnlist);
+			}
+		
+			
+			
+			
+			
+		    update("1990");
+			/*d3.select("body").append("div").attr("class","center").html(guidetext1990);
+			d3.selectAll(".center").transition().duration(3000).style("opacity", 0.4);*/
+		
+		d3.select("body").append("div").attr("class","tourtextbox")
+		.attr("padding-bottom","25px");
+		
+	    ////function to give explanatory tour of data
+	    function guided_tour(notes_index) {
+		//select colors to highlight different countries
+		var vietnamcolor = "#FF0000";
+		var brazilcolor = "#2eb82e";
+		var colombiacolor ="#b2b300";
+		var indonesiacolor = "#33cccc";
+		var mexicocolor="#ecb3ff";
+		var ethiopiacolor = "#ff9900";
+		
+		
+		//create text for each step of tour
+		
+		var clickthisbox= "<p class = \"clickbox\"><b><br>Click this box to continue.</br></p>"
+		
+	
+		
+		
+		
+		var year_ref = [{"year":0,"note":"This animated map will allow you explore changes in global coffee production from 1990 to 2014."+clickthisbox },
+		{"year":0,"note":"From this tour, you will see that while many top producers have relatively consistent production across time, the global leader throughout the period (Brazil), disproportionately increased its output.  And a new major global player (Vietnam) leapfrogged other producers to take the #2 spot."+clickthisbox },
+	{ "year": 1990, "note": "<p class=\"center\"><b>1990</b></p>"+clickthisbox },
+	{ "year": 1991, "note": "<p class=\"center\"><b>1991</b></p>"+clickthisbox },
+	{ "year": 1992, "note": "<p class=\"center\"><b>1992</b></p><br>"+clickthisbox},
+	{ "year": 1993, "note": "<p class=\"center\"><b>1993</b></p><br>"+clickthisbox},
+	{ "year": 1994, "note": "<p class=\"center\"><b>1994</b></p><br>"+clickthisbox},
+    { "year": 1995, "note": "<p class=\"center\"><b>1995</b></p><br>"+clickthisbox},
+	{ "year": 1996, "note": "<p class=\"center\"><b>1996</b></p><br>"+clickthisbox},
+    { "year": 1997, "note": "<p class=\"center\"><b>1997</b></p><br>"+clickthisbox},
+    { "year": 1998, "note": "<p class=\"center\"><b>1998</b></p><br>"+clickthisbox},
+    { "year": 1999, "note": "<p class=\"center\"><b>1999</b></p><br>"+clickthisbox},
+    { "year": 2000, "note": "<p class=\"center\"><b>2000</b></p><br>"+clickthisbox},
+    { "year": 2001, "note": "<p class=\"center\"><b>2001</b></p><br>"+clickthisbox},
+    { "year": 2002, "note": "<p class=\"center\"><b>2002</b></p><br>"+clickthisbox},
+    { "year": 2003, "note": "<p class=\"center\"><b>2003</b></p><br>"+clickthisbox},
+    { "year": 2004, "note": "<p class=\"center\"><b>2004</b></p><br>"+clickthisbox},
+    { "year": 2005, "note": "<p class=\"center\"><b>2005</b></p><br>"+clickthisbox},
+    { "year": 2006, "note": "<p class=\"center\"><b>2006</b></p><br>"+clickthisbox},
+    { "year": 2007, "note": "<p class=\"center\"><b>2007</b></p><br>"+clickthisbox},
+    { "year": 2008, "note": "<p class=\"center\"><b>2008</b></p><br>"+clickthisbox},
+    { "year": 2009, "note": "<p class=\"center\"><b>2009</b></p><br>"+clickthisbox},
+    { "year": 2010, "note": "<p class=\"center\"><b>2010</b></p><br>"+clickthisbox},
+	{ "year": 2011, "note": "<p class=\"center\"><b>2011</b></p><br>"+clickthisbox},
+	{ "year": 2012, "note": "<p class=\"center\"><b>2012</b></p><br>"+clickthisbox},
+	{ "year": 2013, "note": "<p class=\"center\"><b>2013</b></p><br>"+clickthisbox},
+	{ "year": 2014, "note": "<p class=\"center\"><b>2014</b></p><br>"+clickthisbox},
+    { "year": 2015, "note": "<p class=\"center\"><b>2015</b></p><br>"+clickthisbox},
+    { "year": 2016, "note": "<p class=\"center\"><b>2016</b></p><br>"+clickthisbox},
+    { "year": 2017, "note": "<p class=\"center\"><b>2017</b></p><br>"+clickthisbox},
+    { "year": 2018, "note": "<p class=\"center\"><b>2018</b></p><br>"+clickthisbox},
+    { "year": 2019, "note": "<p class=\"center\"><b>2019</b></p><br>"+clickthisbox},
+
+	
+	{ "year": 2019, "note": "<br>Now feel free to explore the data on your own, using the slider at the top of the page.<br><p class = \"clickbox\"> <b> Click here to finish.<br></b></p>"}
+
+	];
+		//set color of country text in table and country border
+		if (notes_index<year_ref.length) {
+				update(year_ref[notes_index].year);
+			d3.selectAll(".tourtextbox")
+			    .transition()
+				.duration(600)
+				.style("top", "600px")
+				.style("color", "#000000")
+				.style("opacity",0.8);	
+				
+
+				d3.selectAll(".tourtextbox").html(year_ref[notes_index].note)
+				.on("click",function(){notes_index+=1;guided_tour(notes_index);} )}
+				
+		if (notes_index > year_ref.length-1) {
+		update(1990);
+		d3.selectAll(".tourtextbox")
+		.transition().duration(600).style("top", "0px")
+		
+		.style("opacity",0)
+		.remove();}}
+		
+		guided_tour(0);
+			
+			
+			
+			
+			///set up slider above map, and parameters for slider, which will run update function
+            d3.select('#slider3').call(d3.slider()
+				.axis(true).min(1990).max(2019).step(1)
+				.on("slide", function( evt,value) { 
+							update(value);}));
+ 			                var w = 140, h = 400;
+
+			//set up legend on upper left
+			var key = d3.select("body")
+			.append("svg")
+			.attr("id", "key")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("style", "position:absolute; top:20px; right:20px");
+
+			var legend = key.append("defs")
+				.append("svg:linearGradient")
+				.attr("id", "gradient")
+				.attr("x1", "100%")
+				.attr("y1", "0%")
+				.attr("x2", "100%")
+				.attr("y2", "100%")
+				.attr("spreadMethod", "pad");
+				legend
+				.append("stop")
+				.attr("offset", "0%")
+				.attr("stop-color", "#009d6e")
+				.attr("stop-opacity", 1);
+				legend.
+				append("stop")
+				.attr("offset", "100%")
+				.attr("stop-color", "green")
+				.attr("stop-opacity", 1);
+
+				key.append("rect")
+				.attr("width", w - 100)
+				.attr("height", h - 100)
+				.style("fill", "url(#gradient)")
+				.attr("transform", "translate(0,10)");
+
+			var y = d3.scale.log().range([0,300]).domain([-10,10]);
+
+			var yAxis = d3.svg.axis();
+				yAxis.scale(y).orient("right").tickFormat
+      					(function (d) {return y.tickFormat(4,d3.format(",d"))(d)});
+						key.append("g")
+						.attr("class", "yaxis")
+						.attr("transform", "translate(41,10)")
+						.call(yAxis)
+						.append("text")
+						.attr("transform", "rotate(-90)")
+						.attr("y", 30)
+						.attr("dy", "2.75em")
+						.style("text-anchor", "end")
+						.text("thousand 60kg bags");
+					//end legend
+					}
+
+		  d3.csv("/Users/sanketgokhale/Desktop/EDAV_Final_Project/WorldBank_data.csv",function(d)
+		  {return d},plot_points);
+}
+</script>
+    
+</body>
+</html>
+<script type="text/javascript">
+/*
+  Use D3 to load the GeoJSON file
+  */
+  
+//d3.json("/Users/sanketgokhale/Desktop/EDAV_Project/world-110m-cia.json", draw);
+
+</script>
+<div id="chart" style="width: 100vw; float: left;">
+<center> <h1> Comparing Global Economic Growth and its affect on Aforestation/Deforestation</h1></center>
+  </div>
+<script>
+d3.select("#chart").append("h3").text("Select a criteria to compare the regions on");
+      d3.select("#chart").append("form").attr("id", "criteria");
+
+      d3.select("#criteria").append("input")
+        .attr("type", "radio")
+        .attr("id", "migrationradio")
+        .attr("name", "criteria");
+
+      d3.select("#criteria").append("label")
+        .attr("for", "migrationradio")
+        .text(" Forests ");
+
+      d3.select("#criteria").append("input")
+        .attr("type", "radio")
+        .attr("id", "killingsradio")
+        .attr("name", "criteria");
+
+      d3.select("#criteria").append("label")
+        .attr("for", "killingsradio")
+        .text(" GDP ");
+d3.select("#migrationradio").on("click", function(){
+    d3.selectAll('svg').remove();
+    d3.selectAll('th').remove();
+    d3.json("/Users/sanketgokhale/Desktop/EDAV_Final_Project/world-110m-cia.json", drawForest);
+});
+
+    d3.select("#killingsradio").on("click", function(){
+    d3.selectAll('svg').remove();
+    d3.json("/Users/sanketgokhale/Desktop/EDAV_Final_Project/world-110m-cia.json", drawGDP);
+    }
+    );
+
+</script>
+
+  
+</body>
+</html>
