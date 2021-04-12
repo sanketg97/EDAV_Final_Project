@@ -1,4 +1,4 @@
-Country,ID,Year,Production_1,Change,Production
+Country,ID,Year,Production_1,Change,PercentChange
 Afghanistan,AFG,1990,1208,1208,0
 Afghanistan,AFG,1991,1208,1208,0
 Afghanistan,AFG,1992,1208,1208,0
